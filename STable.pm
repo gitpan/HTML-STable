@@ -12,12 +12,12 @@ require Exporter;
 @EXPORT = qw(
 	
 );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 
 # Preloaded methods go here.
 
-package Node;
+package SNode;
 use strict;
 
 my $obj_id = 0;
@@ -47,6 +47,7 @@ sub new {
    my $valign  = $hash{"valign"};
    my $color   = $hash{"color"};
    my $bgcolor = $hash{"bgcolor"};
+   my $background = $hash{"background"};
    my $size    = $hash{"size"};
    my $face    = $hash{face};
    my $bolds   = $hash{"bold"};
@@ -62,6 +63,7 @@ sub new {
    $O->{colspan} = $colspan ? " colspan=$colspan" : "";
    $O->{rowspan} = $rowspan ? " rowspan=$rowspan" : "";
    $O->{bgcolor} = $bgcolor ? " bgcolor=$bgcolor" : "";
+   $O->{background} = $background ? " background=$background" : "";
    $O->{width}   = $width   ? " width=$width"     : "";
    if($header  eq "yes") { 
        $O->{head} = "<TH";
@@ -125,6 +127,7 @@ sub print {
     my $valign  = $O->{valign};
     my $color   = $O->{color};
     my $bgcolor = $O->{bgcolor};
+    my $background = $O->{background};
     my $size    = $O->{size};
     my $face    = $O->{face};
     my $width   = $O->{width};
@@ -154,6 +157,7 @@ sub print {
        if($temp = $hash{"valign" }) { $valign  = " valign=$temp"; }
        if($temp = $hash{"width"  }) { $width   = " width=$temp"; }
        if($temp = $hash{"bgcolor"}) { $bgcolor = " bgcolor=$temp"; }
+       if($temp = $hash{"background"}) { $background = " background=$temp"; }
        if($temp = $hash{"colspan"}) { $colspan = " colspan=$temp"; }
        if($temp = $hash{"rowspan"}) { $rowspan = " rowspan=$temp"; }
        if($temp = $hash{"size"   }) { $color_size = 1; $size    = " size=$temp"; }
@@ -191,6 +195,7 @@ sub print {
     print $colspan;
     print $rowspan;
     print $bgcolor;
+    print $background;
     print ">";
     print $col_si_h;
     print $color;
@@ -223,6 +228,7 @@ sub string {
     $str .= $O->{colspan};
     $str .= $O->{rowspan};
     $str .= $O->{bgcolor};
+    $str .= $O->{background};
     $str .= $O->{color_size_head};
     $str .= $O->{color};
     $str .= $O->{size};
@@ -255,7 +261,7 @@ sub print_list {
 
 sub AUTOLOAD {
    my $O = shift;
-   my $attr = $Node::AUTOLOAD;
+   my $attr = $SNode::AUTOLOAD;
    my $argm = shift;
 
    $attr =~ s/.*:://;
@@ -263,7 +269,7 @@ sub AUTOLOAD {
    
    { # this block will turn strick refs off
        no strict 'refs';
-       *{$Node::AUTOLOAD} = sub {
+       *{$SNode::AUTOLOAD} = sub {
           my $O    = shift;
           my $argm = shift;
           if($argm != "") {
@@ -315,7 +321,7 @@ sub ID {
 1;  # so the require or use succeeds
 
 
-package Date;
+package SDate;
 
 use POSIX qw(strftime);
 use POSIX;
@@ -397,7 +403,7 @@ sub diff
    if ($date != 0 || $date ne "") {
       return ceil(($O->{date} - $date->seconds) / 86400);
    } else {
-      $date = new Date();
+      $date = new SDate();
       return ceil(($O->{date} - $date->{date}) / 86400);
    }
 }
@@ -457,7 +463,7 @@ sub add_days
    my ($sec, $min,$hou,$d,$m,$y) = localtime($O->{date} + 86400 * $days); 
    $m = $m+1;;
    $y = $y+1900;
-   return Date->new("$m/$d/$y")
+   return SDate->new("$m/$d/$y")
 } 
 
 sub month_day {
@@ -488,12 +494,12 @@ sub print {
 sub spaceship {
     my ($this, $that) = @_;
     my $date;
-    if(ref($this) ne "Date") {
-       $date = new Date($this);
+    if(ref($this) ne "SDate") {
+       $date = new SDate($this);
        $this = $date;
     }
-    if(ref($that) ne "Date") {
-       $date = new Date($that);
+    if(ref($that) ne "SDate") {
+       $date = new SDate($that);
        $that = $date;
     }
     $this->{date} <=> $that->{date};
@@ -738,7 +744,7 @@ sub insert {
              $index = ($row + $j) % 2;
           }
           $fmt = $O->{alter_row_formats}[$index];
-          $O->{node_nodes}[$row][$j] = new Node($fmt);
+          $O->{node_nodes}[$row][$j] = new SNode($fmt);
           $O->{flag}[$row][$j] = 200;
        }
        $O->{arr}[$row][$col] = $txt;
@@ -754,7 +760,7 @@ sub insert {
 # column formats has higher precedence than body_format
 
        $fmt = $O->{body_format}.";".$O->{column_formats}[$col].";".$fmt;
-       $O->{node_nodes}[$row][$col] = new Node($fmt);
+       $O->{node_nodes}[$row][$col] = new SNode($fmt);
        $O->{flag}[$row][$col] = 200;   # value inserted and there is format changes
     }
     $O->{arr}[$row][$col] = $txt;
@@ -798,14 +804,14 @@ sub cell_format
     if(ref($ar)) {
        my $fmt;
        foreach $fmt (@{$ar}) {
-          $O->{node_nodes}[$row][$col] = new Node($fmt);
+          $O->{node_nodes}[$row][$col] = new SNode($fmt);
           # value inserted and there is format changes
           $O->{flag}[$row][$col] = 200;
           $col++;
        }
     } else {
        my $fmt = $ar;
-       $O->{node_nodes}[$row][$col] = new Node($fmt);
+       $O->{node_nodes}[$row][$col] = new SNode($fmt);
        # value inserted and there is format changes
        $O->{flag}[$row][$col] = 200;
     }
@@ -826,7 +832,7 @@ sub row_format
 sub print_head {
     my $O = shift;
     my ($i,$j);
-    $O->{head_nodes} = new Node($O->{head_format});
+    $O->{head_nodes} = new SNode($O->{head_format});
     my $temp_node;
     my $col_num = $#{$O->{print_columns}};
     my $row_num = $O->{row_number};
@@ -865,10 +871,10 @@ sub print_head {
     for($i = 0; $i <= $col_num; $i++) {
         my $k = $O->{print_columns}[$i];
         if($O->{column_formats}[$k] eq "" ) {
-           $O->{column_nodes}[$k] = new Node($O->{body_format});
+           $O->{column_nodes}[$k] = new SNode($O->{body_format});
         } else {
            my $fmt = $O->{body_format}.";".$O->{column_formats}[$k];
-           $O->{column_nodes}[$k] = new Node($fmt);
+           $O->{column_nodes}[$k] = new SNode($fmt);
         }
     }
 
@@ -1024,12 +1030,12 @@ sub sort {
           tr/d/n/;
           $d_indx{$ind} = 1;
        }
-       # remove "a" from column name
-       if(/a/) {
+       # remove "i" from column name
+       if(/i/) {
           my $ind = $_;
-          $ind =~ tr/[\-a]/ /;
+          $ind =~ tr/[\-i]/ /;
           $ind =~ s/ //g;
-          s/a//;
+          s/i//;
           $a_indx{$ind} = 1;
        }
        if(/A/) { # convert A tag to 0 to obey all rules of Sort::Fields
@@ -1041,7 +1047,7 @@ sub sort {
         my @arr = ();
         for($j = 0; $j <= $col_num; $j++) {
            if($d_indx{$j+1}) {
-              push(@arr, Date->new($O->node($i,$j))->seconds);
+              push(@arr, SDate->new($O->node($i,$j))->seconds);
            } elsif($a_indx{$j+1}) {
               push(@arr, uc ($O->node($i,$j)));
            } else {
@@ -1136,11 +1142,11 @@ sub _null_empty {
        my @val = @{$O->{$txt}};
        if(ref($O->{$fmt})) {
           my @fmt = @{$O->{$fmt}};
-          my $node = Node->new($fmt[$k]);
+          my $node = SNode->new($fmt[$k]);
           $node->print($val[$k]);
        } else {
           if($O->{$fmt}) {
-             my $node = Node->new($O->{$fmt});
+             my $node = SNode->new($O->{$fmt});
              $node->print($val[$k]);
           } else {
              $temp_node->print($val[$k]);
@@ -1150,10 +1156,10 @@ sub _null_empty {
        if($O->{$fmt}) {
           if(ref($O->{$fmt})) {
              my @fmt = @{$O->{$fmt}};
-             my $node = Node->new($fmt[$k]);
+             my $node = SNode->new($fmt[$k]);
              $node->print($O->{$txt});
           } else {
-             my $node = Node->new($O->{$fmt});
+             my $node = SNode->new($O->{$fmt});
              $node->print($O->{$txt});
           }
        } else {
@@ -1313,9 +1319,9 @@ sub _sub_title {
     my $node;
     for($j = 0; $j <= $len; $j++) {
         if(ref($O->{sub_title_format})) {
-           $node = new Node($O->{sub_title_format}->[$j]);
+           $node = new SNode($O->{sub_title_format}->[$j]);
         } else {
-           $node = new Node($O->{sub_title_format});
+           $node = new SNode($O->{sub_title_format});
         }
         print '<center>';
         $node->print($O->{sub_title}->[$j]);
